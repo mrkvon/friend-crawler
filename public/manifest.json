@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Math Livegraph",
+  "name": "Math Livegraph: Abstract Mathematics in a Graph",
   "icons": [
     {
       "src": "favicon.ico",
