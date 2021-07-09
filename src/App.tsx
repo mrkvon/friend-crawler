@@ -1,15 +1,16 @@
 import React from 'react'
+import { SessionGate } from './components/SessionGate'
+import { useSessionInfo } from './hooks/sessionInfo'
 
 function App() {
+  const info = useSessionInfo()
+
   return (
-    <p>
-      This is a basic app that can use{' '}
-      <a href="https://bulma.io/" title="The Bulma CSS framework">
-        Bulma
-      </a>{' '}
-      for styling.
-      <button className="button">hello</button>
-    </p>
+    <>
+      <SessionGate>Welcome {info?.webId}</SessionGate>
+
+      <pre>{'There will be a content.'}</pre>
+    </>
   )
 }
 

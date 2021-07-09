@@ -3,10 +3,13 @@ import ReactDOM from 'react-dom'
 import './index.scss'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
+import SessionProvider from './components/SessionProvider'
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <SessionProvider>
+      <App />
+    </SessionProvider>
   </React.StrictMode>,
   document.getElementById('root'),
 )
