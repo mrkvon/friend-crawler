@@ -1,5 +1,5 @@
 import React from 'react'
-import { SessionGate } from './components/SessionGate'
+import { SessionPrompt } from './components/SessionPrompt'
 import { useSessionInfo } from './hooks/sessionInfo'
 
 function App() {
@@ -7,7 +7,7 @@ function App() {
 
   return (
     <>
-      <SessionGate>Welcome {info?.webId}</SessionGate>
+      <SessionPrompt>Welcome {info?.webId}</SessionPrompt>
 
       <pre>{'There will be a content.'}</pre>
     </>

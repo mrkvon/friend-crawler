@@ -5,7 +5,7 @@ import { getSession } from '../session'
 const session = getSession()
 
 interface Props {
-  children: ReactNode
+  children?: ReactNode
 }
 
 export const SessionGate: React.FC<Props> = (props: Props) => {
@@ -32,8 +32,14 @@ export const SessionGate: React.FC<Props> = (props: Props) => {
   return (
     <>
       <form onSubmit={onSubmit}>
-        <input id="idp" type="url" value={idp} onChange={onChangeInput} />
-        <input type="submit" value="Connect" />
+        <input
+          id="idp"
+          className="input"
+          type="url"
+          value={idp}
+          onChange={onChangeInput}
+        />
+        <input type="submit" value="Connect" className="button" />
       </form>
     </>
   )

@@ -4,6 +4,13 @@ import './index.scss'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 import SessionProvider from './components/SessionProvider'
+import Modal from 'react-modal'
+
+if (typeof document === 'object') {
+  const appElement = document.querySelector('#root') as HTMLElement
+
+  Modal.setAppElement(appElement)
+}
 
 ReactDOM.render(
   <React.StrictMode>
