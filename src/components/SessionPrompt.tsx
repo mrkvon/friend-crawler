@@ -25,7 +25,7 @@ export const SessionPrompt: React.FC<Props> = (props: Props) => {
             setPromptOpen(true)
           }}
         >
-          Connect
+          Login
         </button>
       </>
     )
