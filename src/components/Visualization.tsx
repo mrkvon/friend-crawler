@@ -1,5 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { Vector, drawGrid, drawCircle, drawLine } from '../helpers/draw'
+import {
+  Vector,
+  drawGrid,
+  drawCircle,
+  drawLine,
+  drawText,
+} from '../helpers/draw'
 import classnames from 'classnames'
 import { SimulationNode } from '../simulation/types'
 import { SimulationLinkExt } from '../simulation'
@@ -46,6 +52,10 @@ const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
           drawCircle(context, [x, y], 10, {
             fillStyle: '#fff8',
           }),
+        )
+
+        nodes.forEach(({ x, y, label }) =>
+          drawText(context, [x + 15, y], label, {}),
         )
 
         return () => context.restore()

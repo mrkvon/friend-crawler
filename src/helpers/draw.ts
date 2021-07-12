@@ -2,6 +2,20 @@ export type Vector = [number, number]
 
 type Options = Partial<CanvasRenderingContext2D>
 
+export const drawText = (
+  context: CanvasRenderingContext2D,
+  [x, y]: Vector,
+  text: string,
+  options: Options,
+) => {
+  context.font = '20px Arial'
+  context.textBaseline = 'middle'
+  context.textAlign = 'left'
+  context.fillStyle = '#fff7'
+  Object.assign(context, options)
+  context.fillText(text, x, y)
+}
+
 export const drawCircle = (
   context: CanvasRenderingContext2D,
   [x, y]: Vector,
