@@ -1,8 +1,5 @@
-import React, { useState, useEffect, ReactNode } from 'react'
+import React, { useState, ReactNode } from 'react'
 import { SessionContext, SessionInfo } from '../contexts/session'
-import { getSession } from '../session'
-
-const session = getSession()
 
 interface Props {
   children: ReactNode
@@ -11,17 +8,8 @@ interface Props {
 const SessionProvider: React.FC<Props> = (props: Props) => {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null)
 
-  useEffect(() => {
-    ;(async () => {
-      const info = await session.handleIncomingRedirect(window.location.href)
-      if (info && info.isLoggedIn) {
-        setSessionInfo(info as SessionInfo)
-      }
-    })()
-  }, [])
-
   return (
-    <SessionContext.Provider value={sessionInfo}>
+    <SessionContext.Provider value={[sessionInfo, setSessionInfo]}>
       {props.children}
     </SessionContext.Provider>
   )

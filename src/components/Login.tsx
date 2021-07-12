@@ -1,24 +1,66 @@
-import React from 'react'
-import { SessionPrompt } from './SessionPrompt'
-import { useSessionInfo } from '../hooks/sessionInfo'
-import { getStringNoLocale } from '@inrupt/solid-client'
-import { foaf } from 'rdf-namespaces'
-import { useProfile } from '../hooks/profile'
+import React, { useState, useEffect, useContext } from 'react'
+import {
+  login,
+  logout,
+  handleIncomingRedirect,
+} from '@inrupt/solid-client-authn-browser'
+import { SessionContext, SessionInfo } from '../contexts/session'
 
-const Login: React.FC = () => {
-  const info = useSessionInfo()
-  const profile = useProfile()
+interface Props {
+  className?: string
+}
 
-  const name = profile
-    ? getStringNoLocale(profile.data, foaf.name)
-    : info?.webId
+const Login: React.FC<Props> = (
+  { className, ...props }: Props = { className: '' },
+) => {
+  const [loading, setLoading] = useState(true)
+  const [info, setInfo] = useContext(SessionContext)
+  useEffect(() => {
+    setLoading(true)
+    handleIncomingRedirect(window.location.href)
+      .then(newInfo => {
+        if (newInfo) setInfo(newInfo as SessionInfo)
+      })
+      .catch(e => {
+        console.log(e)
+        setInfo(null)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [setInfo])
+  const handleLogin = async () => {
+    setLoading(true)
+    await login({
+      oidcIssuer: 'https://solidcommunity.net',
+      redirectUrl: window.location.href,
+      clientName: 'Math Livegraph',
+    })
+    setLoading(false)
+  }
 
-  return (
-    <SessionPrompt>
-      <a href={info?.webId} className="button">
-        {name}
-      </a>
-    </SessionPrompt>
+  const handleLogout = async () => {
+    setLoading(true)
+    await logout()
+    if (setInfo) setInfo(null)
+    setLoading(false)
+  }
+
+  const commonProps = {
+    ...props,
+    className: `${className} button`,
+  }
+
+  return loading ? (
+    <span {...commonProps}>Loading</span>
+  ) : info?.isLoggedIn ? (
+    <button {...commonProps} onClick={handleLogout}>
+      {info?.webId} Logout
+    </button>
+  ) : (
+    <button {...commonProps} onClick={handleLogin}>
+      Login
+    </button>
   )
 }
 

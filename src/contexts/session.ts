@@ -1,5 +1,12 @@
 import { ISessionInfo } from '@inrupt/solid-client-authn-browser'
-import { createContext } from 'react'
+import React, { createContext } from 'react'
 
 export type SessionInfo = Required<ISessionInfo>
-export const SessionContext = createContext<SessionInfo | null>(null)
+export const SessionContext = createContext<
+  [SessionInfo | null, React.Dispatch<React.SetStateAction<SessionInfo | null>>]
+>([
+  null,
+  () => {
+    return
+  },
+])

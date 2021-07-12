@@ -1,10 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { Vector, drawGrid } from '../helpers/draw'
+import { Vector, drawGrid, drawCircle, drawLine } from '../helpers/draw'
 import classnames from 'classnames'
+import { SimulationNode } from '../simulation/types'
+import { SimulationLinkExt } from '../simulation'
 
-type Props = Partial<React.CanvasHTMLAttributes<HTMLCanvasElement>>
+type Props = Partial<React.CanvasHTMLAttributes<HTMLCanvasElement>> & {
+  nodes: SimulationNode[]
+  links: SimulationLinkExt[]
+}
 
-const Visualization: React.FC<Props> = (props: Props) => {
+const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
   const canvasEl = useRef<HTMLCanvasElement>(null)
   const [{ width, height }, setVisualizationSize] = useState({
     width: 0,
@@ -18,13 +23,35 @@ const Visualization: React.FC<Props> = (props: Props) => {
         const offset: Vector = [width / 2, height / 2]
         context.save()
         context.translate(...offset)
-        context.clearRect(0, 0, width, height)
+        context.clearRect(-offset[0], -offset[1], width, height)
         drawGrid(context, width, height, offset)
+        links.forEach(link => {
+          if (
+            typeof link.source === 'object' &&
+            typeof link.target === 'object' &&
+            typeof link.source.x === 'number' &&
+            typeof link.target.x === 'number' &&
+            typeof link.source.y === 'number' &&
+            typeof link.target.y === 'number'
+          ) {
+            const source: Vector = [link.source.x, link.source.y]
+            const target: Vector = [link.target.x, link.target.y]
+            drawLine(context, source, target, {
+              strokeStyle: 'white',
+              lineWidth: 0.5,
+            })
+          }
+        })
+        nodes.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, {
+            fillStyle: '#fff8',
+          }),
+        )
 
         return () => context.restore()
       }
     }
-  }, [width, height, canvasEl])
+  }, [width, height, nodes, links, canvasEl])
 
   useEffect(() => {
     const updateCanvasSize = () => {

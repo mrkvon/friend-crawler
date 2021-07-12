@@ -1,15 +1,16 @@
 import React from 'react'
 import Login from './Login'
-import Visualization from './Visualization'
+import VisualizationContainer from './VisualizationContainer'
 import styled from 'styled-components'
 
-const UserPositioning = styled.div`
+const PositionedLogin = styled(Login)`
   position: fixed;
   top: 1em;
   right: 1em;
+  display: block;
 `
 
-const FullSizeVisualization = styled(Visualization)`
+const FullSizeVisualization = styled(VisualizationContainer)`
   height: 100vh;
   width: 100vw;
   display: block;
@@ -18,9 +19,7 @@ const FullSizeVisualization = styled(Visualization)`
 const Layout: React.FC = () => {
   return (
     <>
-      <UserPositioning>
-        <Login />
-      </UserPositioning>
+      <PositionedLogin />
 
       <FullSizeVisualization />
     </>

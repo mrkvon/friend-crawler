@@ -4,7 +4,7 @@ import { useSessionInfo } from './sessionInfo'
 import { useDataset } from './dataset'
 
 export function useProfile() {
-  const sessionInfo = useSessionInfo()
+  const [sessionInfo] = useSessionInfo()
   const profileDoc = useDataset(sessionInfo?.webId ?? null)
 
   const update = useCallback(

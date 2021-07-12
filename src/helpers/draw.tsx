@@ -2,6 +2,18 @@ export type Vector = [number, number]
 
 type Options = Partial<CanvasRenderingContext2D>
 
+export const drawCircle = (
+  context: CanvasRenderingContext2D,
+  [x, y]: Vector,
+  radius: number,
+  options: Options,
+) => {
+  Object.assign(context, options)
+  context.beginPath()
+  context.arc(x, y, radius, 0, 2 * Math.PI)
+  context.fill()
+}
+
 export const drawLine = (
   context: CanvasRenderingContext2D,
   start: Vector,
