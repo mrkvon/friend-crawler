@@ -1,5 +1,11 @@
 export type Vector = [number, number]
 
+export type Grid = {
+  origin: Vector // coordinate of the origin
+  distance: number // distance between lines
+  highlight: number // which lines should be highlighted
+}
+
 type Options = Partial<CanvasRenderingContext2D>
 
 export const drawText = (
@@ -44,29 +50,64 @@ export const drawLine = (
 
 export const drawGrid = (
   context: CanvasRenderingContext2D,
+  grid: Grid,
   width: number,
   height: number,
   offset: Vector = [0, 0],
 ) => {
-  const getLineWidth = (i: number) => (i === 0 ? 2 : i % 5 === 0 ? 1 : 0.5)
+  const min1 = -offset[1]
+  const max1 = height - offset[1]
+  const min0 = -offset[0]
+  const max0 = width - offset[0]
 
-  const negLinesX = Math.ceil(-offset[0] / 10)
-  const posLinesX = Math.ceil((width - offset[0]) / 10)
-  const negLinesY = Math.ceil(-offset[1] / 10)
-  const posLinesY = Math.ceil((height - offset[1]) / 10)
+  const getLineWidth = (i: number) =>
+    i === 0 ? 2 : i % grid.highlight === 0 ? 1 : 0.5
 
-  for (let i = negLinesY; i < posLinesY; ++i) {
-    const y = 10 * i
-    drawLine(context, [0 - offset[0], y], [width - offset[0], y], {
-      strokeStyle: 'white',
-      lineWidth: getLineWidth(i),
-    })
+  let i = 0
+  while (i * grid.distance + grid.origin[0] <= max0) {
+    const x = i * grid.distance + grid.origin[0]
+    if (x >= min0) {
+      drawLine(context, [x, min1], [x, max1], {
+        strokeStyle: 'white',
+        lineWidth: getLineWidth(i),
+      })
+    }
+    i++
   }
-  for (let i = negLinesX; i < posLinesX; ++i) {
-    const x = 10 * i
-    drawLine(context, [x, 0 - offset[1]], [x, height - offset[1]], {
-      strokeStyle: 'white',
-      lineWidth: getLineWidth(i),
-    })
+
+  i = -1
+  while (i * grid.distance + grid.origin[0] >= min0) {
+    const x = i * grid.distance + grid.origin[0]
+    if (x <= max0) {
+      drawLine(context, [x, min1], [x, max1], {
+        strokeStyle: 'white',
+        lineWidth: getLineWidth(i),
+      })
+    }
+    i--
+  }
+
+  i = 0
+  while (i * grid.distance + grid.origin[1] <= max1) {
+    const y = i * grid.distance + grid.origin[1]
+    if (y >= min1) {
+      drawLine(context, [min0, y], [max0, y], {
+        strokeStyle: 'white',
+        lineWidth: getLineWidth(i),
+      })
+    }
+    i++
+  }
+
+  i = -1
+  while (i * grid.distance + grid.origin[1] >= min1) {
+    const y = i * grid.distance + grid.origin[1]
+    if (y <= max1) {
+      drawLine(context, [min0, y], [max0, y], {
+        strokeStyle: 'white',
+        lineWidth: getLineWidth(i),
+      })
+    }
+    i--
   }
 }

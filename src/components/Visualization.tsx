@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import {
   Vector,
+  Grid,
   drawGrid,
   drawCircle,
   drawLine,
@@ -9,13 +10,27 @@ import {
 import classnames from 'classnames'
 import { SimulationNode } from '../simulation/types'
 import { SimulationLinkExt } from '../simulation'
+import { drag } from 'd3-drag'
+import { zoom } from 'd3-zoom'
+import { select } from 'd3-selection'
+import numeric from 'numeric'
 
 type Props = Partial<React.CanvasHTMLAttributes<HTMLCanvasElement>> & {
   nodes: SimulationNode[]
   links: SimulationLinkExt[]
+  grid: Grid
+  onTransform: (matrix: number[][]) => void
 }
 
-const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
+let old: number[][]
+
+const Visualization: React.FC<Props> = ({
+  nodes,
+  links,
+  grid,
+  onTransform,
+  ...props
+}: Props) => {
   const canvasEl = useRef<HTMLCanvasElement>(null)
   const [{ width, height }, setVisualizationSize] = useState({
     width: 0,
@@ -30,7 +45,7 @@ const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
         context.save()
         context.translate(...offset)
         context.clearRect(-offset[0], -offset[1], width, height)
-        drawGrid(context, width, height, offset)
+        drawGrid(context, grid, width, height, offset)
         links.forEach(link => {
           if (
             typeof link.source === 'object' &&
@@ -61,7 +76,7 @@ const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
         return () => context.restore()
       }
     }
-  }, [width, height, nodes, links, canvasEl])
+  }, [width, height, nodes, links, canvasEl, grid])
 
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -80,6 +95,49 @@ const Visualization: React.FC<Props> = ({ nodes, links, ...props }: Props) => {
       window.removeEventListener('load', updateCanvasSize)
     }
   }, [width, height, canvasEl])
+
+  useEffect(() => {
+    if (canvasEl && canvasEl.current) {
+      select(canvasEl.current).call(
+        drag<HTMLCanvasElement, unknown>()
+          .clickDistance(2)
+          .on('start', console.log)
+          .on('drag', e => {
+            onTransform([
+              [1, 0, e.dx],
+              [0, 1, e.dy],
+              [0, 0, 1],
+            ])
+          })
+          .on('end', console.log),
+      )
+
+      select(canvasEl.current).call(
+        zoom<HTMLCanvasElement, unknown>()
+          .clickDistance(2)
+          .scaleExtent([0.05, 3])
+          .on('zoom', e => {
+            old = old ?? [
+              [1, 0, -width / 2],
+              [0, 1, -height / 2],
+              [0, 0, 1],
+            ]
+            const { x, y, k } = e.transform
+
+            const zoom = [
+              [k, 0, x - width / 2],
+              [0, k, y - height / 2],
+              [0, 0, 1],
+            ]
+
+            const transform = numeric.dot(zoom, numeric.inv(old)) as number[][]
+            old = zoom
+
+            onTransform(transform)
+          }),
+      )
+    }
+  }, [canvasEl, onTransform, height, width])
 
   return (
     <canvas
