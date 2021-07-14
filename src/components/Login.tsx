@@ -17,7 +17,10 @@ const Login: React.FC<Props> = (
   const [info, setInfo] = useContext(SessionContext)
   useEffect(() => {
     setLoading(true)
-    handleIncomingRedirect(window.location.href)
+    handleIncomingRedirect({
+      url: window.location.href,
+      restorePreviousSession: true,
+    })
       .then(newInfo => {
         if (newInfo) setInfo(newInfo as SessionInfo)
       })
