@@ -16,10 +16,11 @@ import { select } from 'd3-selection'
 import numeric from 'numeric'
 
 type Props = Partial<React.CanvasHTMLAttributes<HTMLCanvasElement>> & {
-  nodes: SimulationNode[]
+  nodes: (SimulationNode & { style: string })[]
   links: SimulationLinkExt[]
   grid: Grid
   onTransform: (matrix: number[][]) => void
+  onHover: (position: Vector) => void
 }
 
 let old: number[][]
@@ -29,6 +30,7 @@ const Visualization: React.FC<Props> = ({
   links,
   grid,
   onTransform,
+  onHover,
   ...props
 }: Props) => {
   const canvasEl = useRef<HTMLCanvasElement>(null)
@@ -63,15 +65,27 @@ const Visualization: React.FC<Props> = ({
             })
           }
         })
-        nodes.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, {
-            fillStyle: '#fff8',
-          }),
+
+        const accentedColor = 'violet' // '#ff5d'
+        const accented = nodes.filter(({ style }) => style === 'accent')
+        const rest = nodes.filter(({ style }) => !style)
+
+        rest.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, { fillStyle: '#fff8' }),
         )
 
-        nodes.forEach(({ x, y, label }) =>
-          drawText(context, [x + 15, y], label, {}),
+        rest.forEach(({ x, y, label }) => {
+          drawText(context, [x + 15, y], label, {})
+        })
+
+        // draw accented nodes
+        accented.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, { fillStyle: accentedColor }),
         )
+
+        accented.forEach(({ x, y, label }) => {
+          drawText(context, [x + 15, y], label, { fillStyle: accentedColor })
+        })
 
         return () => context.restore()
       }
@@ -139,10 +153,16 @@ const Visualization: React.FC<Props> = ({
     }
   }, [canvasEl, onTransform, height, width])
 
+  const handleMouseMove: React.MouseEventHandler<HTMLCanvasElement> = e =>
+    onHover([e.clientX - width / 2, e.clientY - height / 2])
+
   return (
     <canvas
       {...props}
       ref={canvasEl}
+      onMouseMove={handleMouseMove}
+      // @TODO this piece is very inefficient, we search for a nonexistent node, just to unhighlight everything; but it works
+      onMouseOut={() => onHover([Infinity, Infinity])}
       width={width}
       height={height}
       className={classnames(props.className, 'has-background-dark')}

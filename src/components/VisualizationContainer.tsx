@@ -34,9 +34,13 @@ type VisualizationGraph = {
 }
 */
 
-type SimulationGraph = {
+interface SimulationGraph {
   nodes: SimulationNode[]
   links: SimulationLinkExt[]
+}
+
+interface SimulationGraphWithOptions extends SimulationGraph {
+  nodes: (SimulationNode & { style: string })[]
 }
 
 const basicGrid: Grid = {
@@ -60,13 +64,18 @@ const transformGrid = (matrix: number[][], grid: Grid): Grid => {
 const transformSimulation = (
   matrix: number[][],
   graph: SimulationGraph,
-): SimulationGraph => {
+  highlighted: string | undefined,
+): SimulationGraphWithOptions => {
   const transformedNodesDict = Object.fromEntries(
     graph.nodes.map(node => {
       const [x, y] = transform(matrix, [node.x, node.y])
-      return [node.uri, { ...node, x, y }]
+      return [node.uri, { ...node, x, y, style: '' }]
     }),
   )
+
+  if (highlighted) {
+    transformedNodesDict[highlighted].style = 'accent'
+  }
 
   const links = graph.links.map(link => {
     const sourceUri =
@@ -95,10 +104,13 @@ const VisualizationContainer: React.FC = props => {
     links: [],
   })
 
-  const [transformedLayout, setTransformedLayout] = useState<SimulationGraph>({
-    nodes: [],
-    links: [],
-  })
+  const [transformedLayout, setTransformedLayout] =
+    useState<SimulationGraphWithOptions>({
+      nodes: [],
+      links: [],
+    })
+
+  const [highlightedNode, setHighlightedNode] = useState<string | undefined>()
 
   const [grid, setGrid] = useState<Grid>(basicGrid)
 
@@ -117,8 +129,8 @@ const VisualizationContainer: React.FC = props => {
 
   // transform layout to TransformedLayout
   useEffect(() => {
-    setTransformedLayout(transformSimulation(matrix, layout))
-  }, [layout, matrix])
+    setTransformedLayout(transformSimulation(matrix, layout, highlightedNode))
+  }, [layout, matrix, highlightedNode])
 
   useEffect(() => {
     let lastUpdate = Date.now() - 20
@@ -163,8 +175,15 @@ const VisualizationContainer: React.FC = props => {
     simulation.update({ nodes, links })
   }, [graph])
 
-  function handleTransform(matrix: number[][]): void {
+  const handleTransform = (matrix: number[][]): void => {
     setMatrix(prevMatrix => numeric.dot(matrix, prevMatrix) as number[][])
+  }
+
+  const handleHover = (position: Vector): void => {
+    // first transform to local coordinates
+    const [x, y] = transform(numeric.inv(matrix), position)
+    // then find the node in simulation
+    setHighlightedNode(simulation.selectNode({ x, y })?.uri)
   }
 
   return (
@@ -173,6 +192,7 @@ const VisualizationContainer: React.FC = props => {
       links={transformedLayout.links}
       grid={grid}
       onTransform={handleTransform}
+      onHover={handleHover}
       {...props}
     />
   )
