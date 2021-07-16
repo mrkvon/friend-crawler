@@ -17,7 +17,7 @@ export const drawText = (
   context.font = '20px Arial'
   context.textBaseline = 'middle'
   context.textAlign = 'left'
-  context.fillStyle = '#fff7'
+  // context.fillStyle = '#fff7'
   Object.assign(context, options)
   context.fillText(text, x, y)
 }
@@ -55,6 +55,7 @@ export const drawGrid = (
   height: number,
   offset: Vector = [0, 0],
 ) => {
+  const strokeStyle = '#fff2'
   const min1 = -offset[1]
   const max1 = height - offset[1]
   const min0 = -offset[0]
@@ -68,7 +69,7 @@ export const drawGrid = (
     const x = i * grid.distance + grid.origin[0]
     if (x >= min0) {
       drawLine(context, [x, min1], [x, max1], {
-        strokeStyle: 'white',
+        strokeStyle,
         lineWidth: getLineWidth(i),
       })
     }
@@ -80,7 +81,7 @@ export const drawGrid = (
     const x = i * grid.distance + grid.origin[0]
     if (x <= max0) {
       drawLine(context, [x, min1], [x, max1], {
-        strokeStyle: 'white',
+        strokeStyle,
         lineWidth: getLineWidth(i),
       })
     }
@@ -92,7 +93,7 @@ export const drawGrid = (
     const y = i * grid.distance + grid.origin[1]
     if (y >= min1) {
       drawLine(context, [min0, y], [max0, y], {
-        strokeStyle: 'white',
+        strokeStyle,
         lineWidth: getLineWidth(i),
       })
     }
@@ -104,7 +105,7 @@ export const drawGrid = (
     const y = i * grid.distance + grid.origin[1]
     if (y <= max1) {
       drawLine(context, [min0, y], [max0, y], {
-        strokeStyle: 'white',
+        strokeStyle,
         lineWidth: getLineWidth(i),
       })
     }

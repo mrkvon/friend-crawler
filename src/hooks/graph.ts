@@ -23,6 +23,18 @@ export type Graph = {
   [uri: string]: GraphNode
 }
 
+// function: Make sure the given Graph has a node with given uri
+// it checks whether the node exists and creates a node if it doesn't exist
+const ensureNode = (graph: Graph, uri: UrlString): GraphNode => {
+  graph[uri] = graph[uri] ?? {
+    type: '',
+    description: '',
+    dependsOn: {},
+    label: '',
+  }
+  return graph[uri]
+}
+
 const fetcher = async (
   url: UrlString,
 ): Promise<SolidDataset & WithResourceInfo> => {
@@ -38,17 +50,8 @@ export default function useGraph(): [Graph, () => void] {
 
   const [response, setResponse] = useState<Graph>({})
 
+  // whenever data change, we process them into an object of type Graph
   useEffect(() => {
-    const ensureNode = (graph: Graph, uri: UrlString): GraphNode => {
-      graph[uri] = graph[uri] ?? {
-        type: '',
-        description: '',
-        dependsOn: {},
-        label: '',
-      }
-      return graph[uri]
-    }
-
     const graph: Graph = {}
 
     if (data) {

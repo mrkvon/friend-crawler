@@ -8,29 +8,28 @@ import {
   drawText,
 } from '../helpers/draw'
 import classnames from 'classnames'
-import { SimulationNode } from '../simulation/types'
-import { SimulationLinkExt } from '../simulation'
 import { drag } from 'd3-drag'
 import { zoom } from 'd3-zoom'
 import { select } from 'd3-selection'
 import numeric from 'numeric'
+import { VisualizationGraph } from './VisualizationContainer'
 
 type Props = Partial<React.CanvasHTMLAttributes<HTMLCanvasElement>> & {
-  nodes: (SimulationNode & { style: string })[]
-  links: SimulationLinkExt[]
+  graph: VisualizationGraph
   grid: Grid
   onTransform: (matrix: number[][]) => void
   onHover: (position: Vector) => void
+  onSelectNode: (position: Vector) => void
 }
 
 let old: number[][]
 
 const Visualization: React.FC<Props> = ({
-  nodes,
-  links,
+  graph,
   grid,
   onTransform,
   onHover,
+  onSelectNode,
   ...props
 }: Props) => {
   const canvasEl = useRef<HTMLCanvasElement>(null)
@@ -48,49 +47,55 @@ const Visualization: React.FC<Props> = ({
         context.translate(...offset)
         context.clearRect(-offset[0], -offset[1], width, height)
         drawGrid(context, grid, width, height, offset)
-        links.forEach(link => {
-          if (
-            typeof link.source === 'object' &&
-            typeof link.target === 'object' &&
-            typeof link.source.x === 'number' &&
-            typeof link.target.x === 'number' &&
-            typeof link.source.y === 'number' &&
-            typeof link.target.y === 'number'
-          ) {
-            const source: Vector = [link.source.x, link.source.y]
-            const target: Vector = [link.target.x, link.target.y]
-            drawLine(context, source, target, {
+        graph.links.forEach(link => {
+          drawLine(
+            context,
+            [link.source.x, link.source.y],
+            [link.target.x, link.target.y],
+            {
               strokeStyle: 'white',
               lineWidth: 0.5,
-            })
-          }
+            },
+          )
         })
 
         const accentedColor = 'violet' // '#ff5d'
-        const accented = nodes.filter(({ style }) => style === 'accent')
-        const rest = nodes.filter(({ style }) => !style)
+        const focusedColor = 'red'
+        const accented = graph.nodes.filter(({ style }) => style === 'accent')
+        const focused = graph.nodes.filter(({ style }) => style === 'focus')
+        const rest = graph.nodes.filter(({ style }) => !style)
 
+        // draw all the nodes which are not special
         rest.forEach(({ x, y }) =>
           drawCircle(context, [x, y], 10, { fillStyle: '#fff8' }),
         )
 
-        rest.forEach(({ x, y, label }) => {
-          drawText(context, [x + 15, y], label, {})
-        })
+        rest.forEach(({ x, y, label }) =>
+          drawText(context, [x + 15, y], label, { fillStyle: '#fff4' }),
+        )
 
         // draw accented nodes
         accented.forEach(({ x, y }) =>
           drawCircle(context, [x, y], 10, { fillStyle: accentedColor }),
         )
 
-        accented.forEach(({ x, y, label }) => {
-          drawText(context, [x + 15, y], label, { fillStyle: accentedColor })
-        })
+        accented.forEach(({ x, y, label }) =>
+          drawText(context, [x + 15, y], label, { fillStyle: accentedColor }),
+        )
+
+        // draw accented nodes
+        focused.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, { fillStyle: focusedColor }),
+        )
+
+        focused.forEach(({ x, y, label }) =>
+          drawText(context, [x + 15, y], label, { fillStyle: focusedColor }),
+        )
 
         return () => context.restore()
       }
     }
-  }, [width, height, nodes, links, canvasEl, grid])
+  }, [width, height, graph, canvasEl, grid])
 
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -156,6 +161,9 @@ const Visualization: React.FC<Props> = ({
   const handleMouseMove: React.MouseEventHandler<HTMLCanvasElement> = e =>
     onHover([e.clientX - width / 2, e.clientY - height / 2])
 
+  const handleClick: React.MouseEventHandler<HTMLCanvasElement> = e =>
+    onSelectNode([e.clientX - width / 2, e.clientY - height / 2])
+
   return (
     <canvas
       {...props}
@@ -166,6 +174,7 @@ const Visualization: React.FC<Props> = ({
       width={width}
       height={height}
       className={classnames(props.className, 'has-background-dark')}
+      onClick={handleClick}
     />
   )
 }

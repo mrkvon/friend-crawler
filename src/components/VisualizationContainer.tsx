@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react'
 import Visualization from './Visualization'
-import useGraph from '../hooks/graph'
+import useGraph, { Graph } from '../hooks/graph'
 import Simulation, { SimulationLinkExt } from '../simulation'
 import { SimulationNode, SimulationLink } from '../simulation/types'
 import { Vector } from '../helpers/draw'
 import { SessionContext } from '../contexts/session'
 import { Grid } from '../helpers/draw'
+import { prune as pruneGraph } from '../algorithms'
 import numeric from 'numeric'
 // import useSimulation from '../hooks/simulation'
 
@@ -18,29 +19,27 @@ const transform = (matrix: number[][], vector: Vector): Vector => {
   return [x, y]
 }
 
-const simulation = new Simulation()
-
-/*
 type VisualizationNode = {
   x: number
   y: number
   uri: string
   label: string
+  style: string
 }
 
-type VisualizationGraph = {
-  nodes: VisualizationNode[]
-  links: [VisualizationNode, VisualizationNode][]
+type VisualizationLink = {
+  source: VisualizationNode
+  target: VisualizationNode
 }
-*/
+
+export type VisualizationGraph = {
+  nodes: VisualizationNode[]
+  links: VisualizationLink[]
+}
 
 interface SimulationGraph {
   nodes: SimulationNode[]
   links: SimulationLinkExt[]
-}
-
-interface SimulationGraphWithOptions extends SimulationGraph {
-  nodes: (SimulationNode & { style: string })[]
 }
 
 const basicGrid: Grid = {
@@ -61,11 +60,13 @@ const transformGrid = (matrix: number[][], grid: Grid): Grid => {
   }
 }
 
-const transformSimulation = (
+const transformLayout = (
   matrix: number[][],
   graph: SimulationGraph,
   highlighted: string | undefined,
-): SimulationGraphWithOptions => {
+  selected: string | undefined,
+  selectedDependencies: string[],
+): VisualizationGraph => {
   const transformedNodesDict = Object.fromEntries(
     graph.nodes.map(node => {
       const [x, y] = transform(matrix, [node.x, node.y])
@@ -76,6 +77,14 @@ const transformSimulation = (
   if (highlighted) {
     transformedNodesDict[highlighted].style = 'accent'
   }
+
+  if (selected) {
+    transformedNodesDict[selected].style = 'focus'
+  }
+
+  selectedDependencies.forEach(
+    uri => (transformedNodesDict[uri].style = 'accent'),
+  )
 
   const links = graph.links.map(link => {
     const sourceUri =
@@ -98,40 +107,40 @@ const transformSimulation = (
   return { nodes: Object.values(transformedNodesDict), links }
 }
 
+const selectNodeDependencies = (
+  selectedNodeUri: string | undefined,
+  graph: Graph,
+): string[] => {
+  if (!selectedNodeUri) return []
+  return Object.values(graph[selectedNodeUri]?.dependsOn ?? {}).map(
+    node => node.uri,
+  )
+}
+
 const VisualizationContainer: React.FC = props => {
+  const [simulation] = useState(new Simulation())
+
   const [layout, setLayout] = useState<SimulationGraph>({
     nodes: [],
     links: [],
   })
 
-  const [transformedLayout, setTransformedLayout] =
-    useState<SimulationGraphWithOptions>({
-      nodes: [],
-      links: [],
-    })
-
   const [highlightedNode, setHighlightedNode] = useState<string | undefined>()
-
-  const [grid, setGrid] = useState<Grid>(basicGrid)
+  const [selectedNode, setSelectedNode] = useState<string | undefined>()
 
   const [info] = useContext(SessionContext)
+
+  // abstract graph
   const [graph, revalidate] = useGraph()
 
+  // transformation matrix
   const [matrix, setMatrix] = useState<number[][]>([
     [1, 0, 0],
     [0, 1, 0],
     [0, 0, 1],
   ])
 
-  useEffect(() => {
-    setGrid(transformGrid(matrix, basicGrid))
-  }, [matrix])
-
-  // transform layout to TransformedLayout
-  useEffect(() => {
-    setTransformedLayout(transformSimulation(matrix, layout, highlightedNode))
-  }, [layout, matrix, highlightedNode])
-
+  // initialize simulation
   useEffect(() => {
     let lastUpdate = Date.now() - 20
     simulation.start({
@@ -148,23 +157,32 @@ const VisualizationContainer: React.FC = props => {
     return () => {
       simulation.stop()
     }
-  }, [])
+  }, [simulation])
 
+  // refetch graph data when user gets logged in or out
   useEffect(() => {
     ;(async () => {
       await revalidate()
     })()
   }, [info, revalidate])
 
+  // when graph changes, update simulation
   useEffect(() => {
-    const nodes = Object.values(graph).map(({ label, uri }) => ({
+    let prunedOrFullGraph
+    try {
+      prunedOrFullGraph = pruneGraph(graph)
+    } catch {
+      prunedOrFullGraph = graph
+    }
+
+    const nodes = Object.values(prunedOrFullGraph).map(({ label, uri }) => ({
       label,
       x: Math.random() * 400,
       y: Math.random() * 400,
       uri,
     }))
 
-    const links = Object.values(graph).reduce(
+    const links = Object.values(prunedOrFullGraph).reduce(
       (nodes, { uri: source, dependsOn }) => {
         Object.keys(dependsOn).forEach(target => nodes.push({ source, target }))
         return nodes
@@ -173,26 +191,43 @@ const VisualizationContainer: React.FC = props => {
     )
 
     simulation.update({ nodes, links })
-  }, [graph])
+  }, [graph, simulation])
 
   const handleTransform = (matrix: number[][]): void => {
     setMatrix(prevMatrix => numeric.dot(matrix, prevMatrix) as number[][])
   }
 
-  const handleHover = (position: Vector): void => {
-    // first transform to local coordinates
-    const [x, y] = transform(numeric.inv(matrix), position)
-    // then find the node in simulation
-    setHighlightedNode(simulation.selectNode({ x, y })?.uri)
+  const withNode = (action: (uri: string) => unknown) => {
+    return (position: Vector): void => {
+      // first transform to local coordinates
+      const [x, y] = transform(numeric.inv(matrix), position)
+      // then find the node in simulation
+      action(simulation.selectNode({ x, y })?.uri)
+    }
   }
+
+  const handleHover = withNode(setHighlightedNode)
+  const handleSelect = withNode(setSelectedNode)
+
+  const selectedNodeDependencies = selectNodeDependencies(selectedNode, graph)
+  // transform layout to TransformedLayout
+  const transformedLayout = transformLayout(
+    matrix,
+    layout,
+    highlightedNode,
+    selectedNode,
+    selectedNodeDependencies,
+  )
+
+  const grid = transformGrid(matrix, basicGrid)
 
   return (
     <Visualization
-      nodes={transformedLayout.nodes}
-      links={transformedLayout.links}
+      graph={transformedLayout}
       grid={grid}
       onTransform={handleTransform}
       onHover={handleHover}
+      onSelectNode={handleSelect}
       {...props}
     />
   )
