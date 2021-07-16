@@ -120,15 +120,15 @@ const Visualization: React.FC<Props> = ({
       select(canvasEl.current).call(
         drag<HTMLCanvasElement, unknown>()
           .clickDistance(2)
-          .on('start', console.log)
+          //.on('start', console.log)
           .on('drag', e => {
             onTransform([
               [1, 0, e.dx],
               [0, 1, e.dy],
               [0, 0, 1],
             ])
-          })
-          .on('end', console.log),
+          }),
+        //.on('end', console.log),
       )
 
       select(canvasEl.current).call(

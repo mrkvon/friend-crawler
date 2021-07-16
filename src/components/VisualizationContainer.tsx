@@ -8,6 +8,7 @@ import { SessionContext } from '../contexts/session'
 import { Grid } from '../helpers/draw'
 import { prune as pruneGraph } from '../algorithms'
 import numeric from 'numeric'
+import Statement from './Statement'
 // import useSimulation from '../hooks/simulation'
 
 const transform = (matrix: number[][], vector: Vector): Vector => {
@@ -222,14 +223,23 @@ const VisualizationContainer: React.FC = props => {
   const grid = transformGrid(matrix, basicGrid)
 
   return (
-    <Visualization
-      graph={transformedLayout}
-      grid={grid}
-      onTransform={handleTransform}
-      onHover={handleHover}
-      onSelectNode={handleSelect}
-      {...props}
-    />
+    <>
+      <Visualization
+        graph={transformedLayout}
+        grid={grid}
+        onTransform={handleTransform}
+        onHover={handleHover}
+        onSelectNode={handleSelect}
+        {...props}
+      />
+
+      {selectedNode && (
+        <Statement
+          node={graph[selectedNode]}
+          onSelectNode={uri => setSelectedNode(uri)}
+        />
+      )}
+    </>
   )
 }
 

@@ -3,6 +3,7 @@
 @import '~bulma/sass/utilities/_all';
 @import '~bulma/sass/elements/button.sass';
 @import '~bulma/sass/grid/columns.sass';
+@import '~bulma/sass/components/card.sass';
 
 // You can use Bulma variables from here on
 
@@ -11,3 +12,7 @@
 @import '~bulma/sass/layout/hero';
 
 // You can use derived variables from here on
+
+html {
+  overflow-y: hidden;
+}
