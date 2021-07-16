@@ -158,11 +158,22 @@ const Visualization: React.FC<Props> = ({
     }
   }, [canvasEl, onTransform, height, width])
 
-  const handleMouseMove: React.MouseEventHandler<HTMLCanvasElement> = e =>
-    onHover([e.clientX - width / 2, e.clientY - height / 2])
+  const withCanvasPosition =
+    (
+      func: (position: Vector) => void,
+    ): React.MouseEventHandler<HTMLCanvasElement> =>
+    e => {
+      // https://stackoverflow.com/a/42111623
+      if (canvasEl && canvasEl.current) {
+        const rect = canvasEl.current.getBoundingClientRect()
+        const x = e.clientX - rect.left //x position within the element.
+        const y = e.clientY - rect.top //y position within the element.
+        func([x - width / 2, y - height / 2])
+      }
+    }
 
-  const handleClick: React.MouseEventHandler<HTMLCanvasElement> = e =>
-    onSelectNode([e.clientX - width / 2, e.clientY - height / 2])
+  const handleMouseMove = withCanvasPosition(onHover)
+  const handleClick = withCanvasPosition(onSelectNode)
 
   return (
     <canvas
