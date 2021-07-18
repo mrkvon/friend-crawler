@@ -10,8 +10,7 @@ import {
   SimulationLinkDatum,
   ForceLink,
 } from 'd3-force'
-import forceGravity from './gravity'
-import { Coords, Uri, SimulationNode, SimulationLink } from './types'
+import { Coords, Uri, SimulationNode, SimulationLink, Node } from './types'
 
 interface SimulationNodeExt extends SimulationNodeDatum {
   uri: Uri
@@ -34,7 +33,6 @@ export default class Simulation {
         .distance(50)
         .strength(0.1),
     )
-    .force('linkGravity', forceGravity().strength(50))
     .force('charge', forceManyBody().strength(-150).distanceMax(500))
     .force('gravityX', forceX(0).strength(0.01))
     .force('gravityY', forceY(0).strength(0.01))
@@ -64,12 +62,6 @@ export default class Simulation {
         SimulationLinkExt
       >
     ).links(this.links)
-    ;(
-      this.simulation.force('linkGravity') as ForceLink<
-        SimulationNodeExt,
-        SimulationLinkExt
-      >
-    ).links(this.links)
 
     this.simulation.on('tick', () => {
       onTick({
@@ -87,30 +79,27 @@ export default class Simulation {
     return this.simulation.stop()
   }
 
-  update = ({
-    nodes,
-    links,
-  }: {
-    nodes: SimulationNode[]
-    links: SimulationLink[]
-  }) => {
+  update = ({ nodes, links }: { nodes: Node[]; links: SimulationLink[] }) => {
     this.simulation.stop()
-    this.nodes = nodes.map(node => ({
-      ...node,
-      x: node.x || Math.random() * 400,
-      y: node.y || Math.random() * 400,
-    })) as SimulationNodeExt[]
+    // combine current visualization and
+    const thisNodeDict: { [uri: string]: SimulationNodeExt } =
+      Object.fromEntries(this.nodes.map(node => [node.uri, node]))
+    const nodeDict: { [uri: string]: SimulationNodeExt } = Object.fromEntries(
+      nodes.map(node => [
+        node.uri,
+        {
+          ...node,
+          x: Math.random() * 400,
+          y: Math.random() * 400,
+        },
+      ]),
+    )
+    this.nodes = Object.values({ ...nodeDict, ...thisNodeDict })
     this.links = links.map(link => ({ ...link })) as SimulationLinkExt[]
 
     this.simulation.nodes(this.nodes)
     ;(
       this.simulation.force('link') as ForceLink<
-        SimulationNodeExt,
-        SimulationLinkExt
-      >
-    ).links(this.links)
-    ;(
-      this.simulation.force('linkGravity') as ForceLink<
         SimulationNodeExt,
         SimulationLinkExt
       >

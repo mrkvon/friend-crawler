@@ -59,10 +59,14 @@ const Visualization: React.FC<Props> = ({
           )
         })
 
-        const accentedColor = 'violet' // '#ff5d'
-        const focusedColor = 'red'
+        const accentedColor = 'blue' // '#ff5d'
+        const focusedColor = 'purple'
+        const successedColor = '#7d7a'
+        const erroredColor = '#ff6961aa'
         const accented = graph.nodes.filter(({ style }) => style === 'accent')
         const focused = graph.nodes.filter(({ style }) => style === 'focus')
+        const successed = graph.nodes.filter(({ style }) => style === 'success')
+        const errored = graph.nodes.filter(({ style }) => style === 'error')
         const rest = graph.nodes.filter(({ style }) => !style)
 
         // draw all the nodes which are not special
@@ -70,7 +74,18 @@ const Visualization: React.FC<Props> = ({
           drawCircle(context, [x, y], 10, { fillStyle: '#fff8' }),
         )
 
-        rest.forEach(({ x, y, label }) =>
+        // draw errored nodes
+        errored.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, { fillStyle: erroredColor }),
+        )
+
+        // draw successed nodes
+        successed.forEach(({ x, y }) =>
+          drawCircle(context, [x, y], 10, { fillStyle: successedColor }),
+        )
+
+        // draw text of all the above nodes
+        ;[...errored, ...successed, ...rest].forEach(({ x, y, label }) =>
           drawText(context, [x + 15, y], label, { fillStyle: '#fff4' }),
         )
 
@@ -83,7 +98,7 @@ const Visualization: React.FC<Props> = ({
           drawText(context, [x + 15, y], label, { fillStyle: accentedColor }),
         )
 
-        // draw accented nodes
+        // draw focused nodes
         focused.forEach(({ x, y }) =>
           drawCircle(context, [x, y], 10, { fillStyle: focusedColor }),
         )

@@ -37,7 +37,7 @@ const Login: React.FC<Props> = (
     await login({
       oidcIssuer: 'https://solidcommunity.net',
       redirectUrl: window.location.href,
-      clientName: 'Math Livegraph',
+      clientName: 'Friends Crawler',
     })
     setLoading(false)
   }

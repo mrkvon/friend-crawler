@@ -1,15 +1,17 @@
 import React, { useEffect, useState, useContext } from 'react'
 import Visualization from './Visualization'
-import useGraph, { Graph } from '../hooks/graph'
 import Simulation, { SimulationLinkExt } from '../simulation'
 import { SimulationNode, SimulationLink } from '../simulation/types'
 import { Vector } from '../helpers/draw'
-import { SessionContext } from '../contexts/session'
 import { Grid } from '../helpers/draw'
-import { prune as pruneGraph } from '../algorithms'
 import numeric from 'numeric'
-import Statement from './Statement'
+import PersonCard from './PersonCard'
 // import useSimulation from '../hooks/simulation'
+import { PeopleContext, Person } from './DataContainer'
+
+type PeopleGraph = {
+  [uri: string]: Person
+}
 
 const transform = (matrix: number[][], vector: Vector): Vector => {
   const raw = numeric.dot(
@@ -26,6 +28,7 @@ type VisualizationNode = {
   uri: string
   label: string
   style: string
+  r: number
 }
 
 type VisualizationLink = {
@@ -64,6 +67,7 @@ const transformGrid = (matrix: number[][], grid: Grid): Grid => {
 const transformLayout = (
   matrix: number[][],
   graph: SimulationGraph,
+  people: PeopleGraph,
   highlighted: string | undefined,
   selected: string | undefined,
   selectedDependencies: string[],
@@ -71,7 +75,19 @@ const transformLayout = (
   const transformedNodesDict = Object.fromEntries(
     graph.nodes.map(node => {
       const [x, y] = transform(matrix, [node.x, node.y])
-      return [node.uri, { ...node, x, y, style: '' }]
+      const status = people[node.uri]?.status ?? ''
+      const style =
+        status === 'success' ? 'success' : status === 'error' ? 'error' : ''
+      return [
+        node.uri,
+        {
+          ...node,
+          x,
+          y,
+          style,
+          label: people[node.uri]?.name ?? '',
+        } as VisualizationNode,
+      ]
     }),
   )
 
@@ -79,13 +95,13 @@ const transformLayout = (
     transformedNodesDict[highlighted].style = 'accent'
   }
 
-  if (selected) {
-    transformedNodesDict[selected].style = 'focus'
-  }
-
   selectedDependencies.forEach(
     uri => (transformedNodesDict[uri].style = 'accent'),
   )
+
+  if (selected) {
+    transformedNodesDict[selected].style = 'focus'
+  }
 
   const links = graph.links.map(link => {
     const sourceUri =
@@ -110,12 +126,10 @@ const transformLayout = (
 
 const selectNodeDependencies = (
   selectedNodeUri: string | undefined,
-  graph: Graph,
+  graph: PeopleGraph,
 ): string[] => {
   if (!selectedNodeUri) return []
-  return Object.values(graph[selectedNodeUri]?.dependsOn ?? {}).map(
-    node => node.uri,
-  )
+  return Array.from(graph?.[selectedNodeUri].knows ?? new Set())
 }
 
 const VisualizationContainer: React.FC = props => {
@@ -129,10 +143,7 @@ const VisualizationContainer: React.FC = props => {
   const [highlightedNode, setHighlightedNode] = useState<string | undefined>()
   const [selectedNode, setSelectedNode] = useState<string | undefined>()
 
-  const [info] = useContext(SessionContext)
-
-  // abstract graph
-  const [graph, revalidate] = useGraph()
+  const people = useContext(PeopleContext)
 
   // transformation matrix
   const [matrix, setMatrix] = useState<number[][]>([
@@ -160,39 +171,27 @@ const VisualizationContainer: React.FC = props => {
     }
   }, [simulation])
 
-  // refetch graph data when user gets logged in or out
-  useEffect(() => {
-    ;(async () => {
-      await revalidate()
-    })()
-  }, [info, revalidate])
-
   // when graph changes, update simulation
   useEffect(() => {
-    let prunedOrFullGraph
-    try {
-      prunedOrFullGraph = pruneGraph(graph)
-    } catch {
-      prunedOrFullGraph = graph
-    }
+    const prunedOrFullGraph = people
 
-    const nodes = Object.values(prunedOrFullGraph).map(({ label, uri }) => ({
-      label,
-      x: Math.random() * 400,
-      y: Math.random() * 400,
-      uri,
-    }))
+    const nodes = Object.values(prunedOrFullGraph).map(
+      ({ name: label, uri }) => ({
+        label,
+        uri,
+      }),
+    )
 
     const links = Object.values(prunedOrFullGraph).reduce(
-      (nodes, { uri: source, dependsOn }) => {
-        Object.keys(dependsOn).forEach(target => nodes.push({ source, target }))
+      (nodes, { uri: source, knows }) => {
+        knows.forEach(target => nodes.push({ source, target }))
         return nodes
       },
       [] as SimulationLink[],
     )
 
     simulation.update({ nodes, links })
-  }, [graph, simulation])
+  }, [people, simulation])
 
   const handleTransform = (matrix: number[][]): void => {
     setMatrix(prevMatrix => numeric.dot(matrix, prevMatrix) as number[][])
@@ -210,17 +209,27 @@ const VisualizationContainer: React.FC = props => {
   const handleHover = withNode(setHighlightedNode)
   const handleSelect = withNode(setSelectedNode)
 
-  const selectedNodeDependencies = selectNodeDependencies(selectedNode, graph)
+  const selectedNodeDependencies = selectNodeDependencies(selectedNode, people)
   // transform layout to TransformedLayout
   const transformedLayout = transformLayout(
     matrix,
     layout,
+    people,
     highlightedNode,
     selectedNode,
     selectedNodeDependencies,
   )
 
   const grid = transformGrid(matrix, basicGrid)
+
+  let person, knows
+
+  if (selectedNode) {
+    person = people[selectedNode]
+    if (person) {
+      knows = Array.from(person.knows).map(f => people[f])
+    }
+  }
 
   return (
     <>
@@ -233,10 +242,11 @@ const VisualizationContainer: React.FC = props => {
         {...props}
       />
 
-      {selectedNode && (
-        <Statement
-          node={graph[selectedNode]}
-          onSelectNode={uri => setSelectedNode(uri)}
+      {person && knows && (
+        <PersonCard
+          person={person}
+          knows={knows}
+          onSelectPerson={uri => setSelectedNode(uri)}
         />
       )}
     </>

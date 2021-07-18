@@ -1,14 +1,13 @@
 import React from 'react'
-import { GraphNode } from '../hooks/graph'
-import Math from './Math'
+import { Person } from './DataContainer'
 
 interface Props {
-  node: GraphNode
-  onSelectNode: (uri: string) => void
+  person: Person
+  knows: Person[]
+  onSelectPerson: (uri: string) => void
 }
 
-const Statement = ({ node, onSelectNode }: Props) => {
-  const dependencies: GraphNode[] = Object.values(node.dependsOn)
+const Statement = ({ person, knows, onSelectPerson }: Props) => {
   return (
     <div
       style={{
@@ -28,25 +27,29 @@ const Statement = ({ node, onSelectNode }: Props) => {
             style={{ pointerEvents: 'all', overflowX: 'auto', width: '100%' }}
           >
             <header className="card-header">
-              <p className="card-header-title">{node.label}</p>
+              <a className="card-header-title" href={person.uri}>
+                {person.name || person.uri}
+              </a>
             </header>
-            <section className="card-content">
-              <Math>{node.description}</Math>
-            </section>
+            {person.photo && (
+              <div className="card-image">
+                <figure className="image">
+                  <img src={person.photo} alt={person.name} />
+                </figure>
+              </div>
+            )}
             <header className="card-header">
-              <p className="card-header-title">
-                dependencies: {dependencies.length}
-              </p>
+              <p className="card-header-title">knows: {knows.length}</p>
             </header>
             <section className="card-content">
               <ul className="buttons are-small">
-                {dependencies.map(dependency => (
+                {knows.map(friend => (
                   <li
-                    onClick={() => onSelectNode(dependency.uri)}
-                    key={dependency.uri}
-                    className="button is-link is-inverted"
+                    onClick={() => onSelectPerson(friend.uri)}
+                    key={friend.uri}
+                    className="button is-link"
                   >
-                    {dependency.label}
+                    {friend.name}
                   </li>
                 ))}
               </ul>
