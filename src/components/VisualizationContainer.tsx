@@ -6,8 +6,10 @@ import { Vector } from '../helpers/draw'
 import { Grid } from '../helpers/draw'
 import numeric from 'numeric'
 import PersonCard from './PersonCard'
-// import useSimulation from '../hooks/simulation'
+import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { PeopleContext, Person } from './DataContainer'
+import { IriString } from '@inrupt/solid-client'
+import { Helmet } from 'react-helmet'
 
 type PeopleGraph = {
   [uri: string]: Person
@@ -91,15 +93,15 @@ const transformLayout = (
     }),
   )
 
-  if (highlighted) {
+  if (highlighted && transformedNodesDict[highlighted]) {
     transformedNodesDict[highlighted].style = 'accent'
   }
 
-  selectedDependencies.forEach(
-    uri => (transformedNodesDict[uri].style = 'accent'),
-  )
+  selectedDependencies.forEach(uri => {
+    if (transformedNodesDict[uri]) transformedNodesDict[uri].style = 'accent'
+  })
 
-  if (selected) {
+  if (selected && transformedNodesDict[selected]) {
     transformedNodesDict[selected].style = 'focus'
   }
 
@@ -129,10 +131,14 @@ const selectNodeDependencies = (
   graph: PeopleGraph,
 ): string[] => {
   if (!selectedNodeUri) return []
-  return Array.from(graph?.[selectedNodeUri].knows ?? new Set())
+  return Array.from(graph?.[selectedNodeUri]?.knows ?? new Set())
 }
 
-const VisualizationContainer: React.FC = props => {
+const VisualizationContainer: React.FC<RouteComponentProps> = ({
+  location,
+  history,
+  ...props
+}: RouteComponentProps) => {
   const [simulation] = useState(new Simulation())
 
   const [layout, setLayout] = useState<SimulationGraph>({
@@ -141,7 +147,6 @@ const VisualizationContainer: React.FC = props => {
   })
 
   const [highlightedNode, setHighlightedNode] = useState<string | undefined>()
-  const [selectedNode, setSelectedNode] = useState<string | undefined>()
 
   const people = useContext(PeopleContext)
 
@@ -207,7 +212,13 @@ const VisualizationContainer: React.FC = props => {
   }
 
   const handleHover = withNode(setHighlightedNode)
-  const handleSelect = withNode(setSelectedNode)
+  const selectNode = (node: IriString) => {
+    const uri = node ? `/${encodeURIComponent(node)}` : '/'
+    if (uri !== history.location.pathname) history.push(uri)
+  }
+  const handleSelect = withNode(selectNode)
+
+  const selectedNode = decodeURIComponent(location.pathname.slice(1))
 
   const selectedNodeDependencies = selectNodeDependencies(selectedNode, people)
   // transform layout to TransformedLayout
@@ -242,15 +253,18 @@ const VisualizationContainer: React.FC = props => {
         {...props}
       />
 
+      <Helmet>
+        <title>
+          {selectedNode && `${people[selectedNode]?.name || selectedNode} - `}
+          Friend Crawler
+        </title>
+      </Helmet>
+
       {person && knows && (
-        <PersonCard
-          person={person}
-          knows={knows}
-          onSelectPerson={uri => setSelectedNode(uri)}
-        />
+        <PersonCard person={person} knows={knows} onSelectPerson={selectNode} />
       )}
     </>
   )
 }
 
-export default VisualizationContainer
+export default withRouter(VisualizationContainer)
