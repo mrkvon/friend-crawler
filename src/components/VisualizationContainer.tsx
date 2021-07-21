@@ -77,6 +77,7 @@ const transformLayout = (
   const transformedNodesDict = Object.fromEntries(
     graph.nodes.map(node => {
       const [x, y] = transform(matrix, [node.x, node.y])
+      const r = matrix[0][0] * node.r
       const status = people[node.uri]?.status ?? ''
       const style =
         status === 'success' ? 'success' : status === 'error' ? 'error' : ''
@@ -86,9 +87,10 @@ const transformLayout = (
           ...node,
           x,
           y,
+          r,
           style,
           label: people[node.uri]?.name ?? '',
-        } as VisualizationNode,
+        },
       ]
     }),
   )
@@ -124,6 +126,12 @@ const transformLayout = (
   })
 
   return { nodes: Object.values(transformedNodesDict), links }
+}
+
+function nodeRadius(person: Person) {
+  let count = person.known?.size ?? 0
+  count = count < 1 ? 1 : count
+  return count ** 0.42 * 5
 }
 
 const selectNodeDependencies = (
@@ -178,16 +186,13 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
 
   // when graph changes, update simulation
   useEffect(() => {
-    const prunedOrFullGraph = people
+    const nodes = Object.values(people).map(node => ({
+      label: node.name,
+      uri: node.uri,
+      r: nodeRadius(node),
+    }))
 
-    const nodes = Object.values(prunedOrFullGraph).map(
-      ({ name: label, uri }) => ({
-        label,
-        uri,
-      }),
-    )
-
-    const links = Object.values(prunedOrFullGraph).reduce(
+    const links = Object.values(people).reduce(
       (nodes, { uri: source, knows }) => {
         knows.forEach(target => nodes.push({ source, target }))
         return nodes
@@ -233,12 +238,15 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
 
   const grid = transformGrid(matrix, basicGrid)
 
-  let person, knows
+  let person, knows, known
 
   if (selectedNode) {
     person = people[selectedNode]
     if (person) {
       knows = Array.from(person.knows).map(f => people[f])
+      if (person.known) {
+        known = Array.from(person.known).map(f => people[f])
+      }
     }
   }
 
@@ -260,8 +268,13 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
         </title>
       </Helmet>
 
-      {person && knows && (
-        <PersonCard person={person} knows={knows} onSelectPerson={selectNode} />
+      {person && knows && known && (
+        <PersonCard
+          person={person}
+          knows={knows}
+          known={known}
+          onSelectPerson={selectNode}
+        />
       )}
     </>
   )

@@ -48,10 +48,22 @@ const Visualization: React.FC<Props> = ({
         context.clearRect(-offset[0], -offset[1], width, height)
         drawGrid(context, grid, width, height, offset)
         graph.links.forEach(link => {
+          // we're counting a unit vector to make links that don't overlap nodes
+          // source point
+          const s = [link.source.x, link.source.y]
+          // target point
+          const t = [link.target.x, link.target.y]
+          // vector
+          const v = numeric.sub(t, s)
+          // vector size
+          const size = Math.sqrt(v[0] ** 2 + v[1] ** 2)
+          // unit vector
+          const i = numeric.div(v, size)
           drawLine(
             context,
-            [link.source.x, link.source.y],
-            [link.target.x, link.target.y],
+            // links don't overlap circles
+            numeric.add(s, numeric.mul(i, link.source.r)) as Vector,
+            numeric.sub(t, numeric.mul(i, link.target.r)) as Vector,
             {
               strokeStyle: 'white',
               lineWidth: 0.5,
@@ -70,41 +82,43 @@ const Visualization: React.FC<Props> = ({
         const rest = graph.nodes.filter(({ style }) => !style)
 
         // draw all the nodes which are not special
-        rest.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, { fillStyle: '#fff8' }),
+        rest.forEach(({ x, y, r }) =>
+          drawCircle(context, [x, y], r, { fillStyle: '#fff8' }),
         )
 
         // draw errored nodes
-        errored.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, { fillStyle: erroredColor }),
+        errored.forEach(({ x, y, r }) =>
+          drawCircle(context, [x, y], r, { fillStyle: erroredColor }),
         )
 
         // draw successed nodes
-        successed.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, { fillStyle: successedColor }),
+        successed.forEach(({ x, y, r }) =>
+          drawCircle(context, [x, y], r, { fillStyle: successedColor }),
         )
 
         // draw text of all the above nodes
-        ;[...errored, ...successed, ...rest].forEach(({ x, y, label }) =>
-          drawText(context, [x + 15, y], label, { fillStyle: '#fff4' }),
+        ;[...errored, ...successed, ...rest].forEach(({ x, y, r, label }) =>
+          drawText(context, [x + r + 5, y], label, { fillStyle: '#fff4' }),
         )
 
         // draw accented nodes
-        accented.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, { fillStyle: accentedColor }),
+        accented.forEach(({ x, y, r }) =>
+          drawCircle(context, [x, y], r, { fillStyle: accentedColor }),
         )
 
-        accented.forEach(({ x, y, label }) =>
-          drawText(context, [x + 15, y], label, { fillStyle: accentedColor }),
+        accented.forEach(({ x, y, r, label }) =>
+          drawText(context, [x + r + 5, y], label, {
+            fillStyle: accentedColor,
+          }),
         )
 
         // draw focused nodes
-        focused.forEach(({ x, y }) =>
-          drawCircle(context, [x, y], 10, { fillStyle: focusedColor }),
+        focused.forEach(({ x, y, r }) =>
+          drawCircle(context, [x, y], r, { fillStyle: focusedColor }),
         )
 
-        focused.forEach(({ x, y, label }) =>
-          drawText(context, [x + 15, y], label, { fillStyle: focusedColor }),
+        focused.forEach(({ x, y, r, label }) =>
+          drawText(context, [x + r + 5, y], label, { fillStyle: focusedColor }),
         )
 
         return () => context.restore()

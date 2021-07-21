@@ -15,6 +15,7 @@ export type Person = {
   photo: string
   status: 'success' | 'error' | 'pending'
   knows: Set<IriString>
+  known?: Set<IriString>
 }
 
 const DataContainer = ({ children }: Props) => {
@@ -41,6 +42,14 @@ const DataContainer = ({ children }: Props) => {
 
     return BFSFriends([timbl, ...(info?.isLoggedIn ? [me] : [])], setPeople)
   }, [info])
+
+  Object.values(people).forEach(({ uri, knows }) => {
+    knows.forEach(k => {
+      const person = people[k]
+      person.known = person.known ?? new Set()
+      person.known.add(uri)
+    })
+  })
 
   return (
     <PeopleContext.Provider value={people}>{children}</PeopleContext.Provider>

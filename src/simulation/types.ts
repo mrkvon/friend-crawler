@@ -35,6 +35,7 @@ export interface DependencyExtended {
 export interface Node {
   label: string
   uri: Uri
+  r: number
 }
 
 export interface Coords {
@@ -42,9 +43,7 @@ export interface Coords {
   y: number
 }
 
-export interface SimulationNode extends Node, Coords {
-  radius?: number
-}
+export interface SimulationNode extends Node, Coords {}
 
 export interface SimulationLink {
   source: Uri

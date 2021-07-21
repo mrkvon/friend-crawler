@@ -4,10 +4,11 @@ import { Person } from './DataContainer'
 interface Props {
   person: Person
   knows: Person[]
+  known: Person[]
   onSelectPerson: (uri: string) => void
 }
 
-const Statement = ({ person, knows, onSelectPerson }: Props) => {
+const PersonCard = ({ person, knows, known, onSelectPerson }: Props) => {
   return (
     <div
       style={{
@@ -54,6 +55,22 @@ const Statement = ({ person, knows, onSelectPerson }: Props) => {
                 ))}
               </ul>
             </section>
+            <header className="card-header">
+              <p className="card-header-title">known by: {known.length}</p>
+            </header>
+            <section className="card-content">
+              <ul className="buttons are-small">
+                {known.map(friend => (
+                  <li
+                    onClick={() => onSelectPerson(friend.uri)}
+                    key={friend.uri}
+                    className="button is-link"
+                  >
+                    {friend.name}
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         </div>
       </div>
@@ -61,4 +78,4 @@ const Statement = ({ person, knows, onSelectPerson }: Props) => {
   )
 }
 
-export default Statement
+export default PersonCard
