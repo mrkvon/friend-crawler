@@ -90,8 +90,8 @@ export default class Simulation {
       Object.fromEntries(this.nodes.map(node => [node.uri, node]))
     const updatedNodes: SimulationNodeExt[] = nodes.map(node => ({
       ...node,
-      x: Math.random() * 400,
-      y: Math.random() * 400,
+      x: (0.5 - Math.random()) * 800,
+      y: (0.5 - Math.random()) * 800,
       ...thisNodeDict[node.uri],
       r: node.r,
     }))
