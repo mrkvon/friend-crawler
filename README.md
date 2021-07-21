@@ -14,4 +14,4 @@
 - [ ] highlight also people who know the person
 - [ ] highlight people whose button is crawled in PersonList
 - [ ] add custom starting point for crawling
-- [ ] support extended profile (seeAlso, sameAs)
+- [x] support extended profile (seeAlso, sameAs)
