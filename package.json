@@ -28,6 +28,7 @@
     "d3-selection": "^3.0.0",
     "d3-zoom": "^3.0.0",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "limiter": "^2.1.0",
     "node-sass": "^6.0.1",
     "numeric": "^1.2.6",
     "rdf-namespaces": "^1.9.2",

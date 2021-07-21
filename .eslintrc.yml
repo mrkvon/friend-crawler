@@ -32,3 +32,4 @@ rules:
   semi:
     - error
     - never
+  no-debugger: warn

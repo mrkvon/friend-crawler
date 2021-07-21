@@ -7,7 +7,7 @@ interface Props {
 
 export const PeopleList = ({ people, ...props }: Props) => (
   <div {...props}>
-    <div>{Object.keys(people).length}</div>
+    <div>total: {Object.keys(people).length}</div>
     <div>
       pending:{' '}
       {

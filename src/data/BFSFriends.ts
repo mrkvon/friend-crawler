@@ -8,12 +8,22 @@ import {
 } from '@inrupt/solid-client'
 import { foaf, vcard } from 'rdf-namespaces'
 import { Person } from '../components/DataContainer'
+import { RateLimiter } from 'limiter'
+
+const limiter = new RateLimiter({ tokensPerInterval: 1, interval: 50 })
+
+const limitedFetch: typeof fetch = async (...props) => {
+  await limiter.removeTokens(1)
+  return await fetch(...props)
+}
 
 export const findFriends = async (
   webId: IriString,
 ): Promise<{ name: string; friends: IriString[]; photo: string }> => {
   if (webId) {
-    const dataset = await getSolidDataset(getResourceUrl(webId), { fetch })
+    const dataset = await getSolidDataset(getResourceUrl(webId), {
+      fetch: limitedFetch,
+    })
     const person = getThing(dataset, webId)
     if (person) {
       const friends = getTermAll(person, foaf.knows).map(a => a.value)
@@ -47,56 +57,60 @@ export const BFSFriends = (
         .map(person => person.status)
         .includes('pending')
     ) {
-      // take a first unvisited person
-      const unvisitedPerson = Object.values(people).find(
+      // take all unvisited persons
+      const unvisitedPersons = Object.values(people).filter(
         person => person.status === 'pending',
       )
-      if (unvisitedPerson) {
-        // fetch their friends
-        try {
-          const { name, photo, friends } = await findFriends(
-            unvisitedPerson.uri,
-          )
-          const unvisited: Person = {
-            ...unvisitedPerson,
-            status: 'success',
-            knows: new Set(friends.map(uri => fixUri(uri))),
-            name,
-            photo,
-          }
-
-          // add their friends
-          const newlyFoundFriends = Object.fromEntries(
-            friends
-              .map(
-                uri =>
-                  [
-                    fixUri(uri),
-                    {
-                      status: 'pending',
-                      knows: new Set(),
-                      name: '',
-                      uri: fixUri(uri),
-                    } as Person,
-                  ] as [IriString, Person],
+      if (unvisitedPersons.length > 0) {
+        await Promise.all(
+          unvisitedPersons.map(async unvisitedPerson => {
+            // fetch their friends
+            try {
+              const { name, photo, friends } = await findFriends(
+                unvisitedPerson.uri,
               )
-              .filter(([uri]) => !Object.keys(people).includes(uri)),
-          )
+              const unvisited: Person = {
+                ...unvisitedPerson,
+                status: 'success',
+                knows: new Set(friends.map(uri => fixUri(uri))),
+                name,
+                photo,
+              }
 
-          people = {
-            ...people,
-            ...newlyFoundFriends,
-            [unvisited.uri]: unvisited,
-          }
-        } catch (e) {
-          // set their status to error
-          people = {
-            ...people,
-            [unvisitedPerson.uri]: { ...unvisitedPerson, status: 'error' },
-          }
-        } finally {
-          onChange({ ...people })
-        }
+              // add their friends
+              const newlyFoundFriends = Object.fromEntries(
+                friends
+                  .map(
+                    uri =>
+                      [
+                        fixUri(uri),
+                        {
+                          status: 'pending',
+                          knows: new Set(),
+                          name: '',
+                          uri: fixUri(uri),
+                        } as Person,
+                      ] as [IriString, Person],
+                  )
+                  .filter(([uri]) => !Object.keys(people).includes(uri)),
+              )
+
+              people = {
+                ...people,
+                ...newlyFoundFriends,
+                [unvisited.uri]: unvisited,
+              }
+            } catch (e) {
+              // set their status to error
+              people = {
+                ...people,
+                [unvisitedPerson.uri]: { ...unvisitedPerson, status: 'error' },
+              }
+            } finally {
+              onChange({ ...people })
+            }
+          }),
+        )
       } else break
     }
   })()

@@ -9,8 +9,9 @@
 - [ ] show clearly what are the directions of :knows
 - [x] show also who knows this person
 - [ ] login for different pod providers
-- [ ] faster (parallel) crawling
+- [x] faster (parallel) crawling
 - [ ] search people
 - [ ] highlight also people who know the person
 - [ ] highlight people whose button is crawled in PersonList
 - [ ] add custom starting point for crawling
+- [ ] support extended profile (seeAlso, sameAs)
