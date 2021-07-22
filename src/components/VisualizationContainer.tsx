@@ -6,6 +6,7 @@ import { Vector } from '../helpers/draw'
 import { Grid } from '../helpers/draw'
 import numeric from 'numeric'
 import PersonCard from './PersonCard'
+import Search from './Search'
 import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { PeopleContext, Person } from './DataContainer'
 import { IriString } from '@inrupt/solid-client'
@@ -23,6 +24,31 @@ const transform = (matrix: number[][], vector: Vector): Vector => {
   const [[x], [y]] = raw
   return [x, y]
 }
+
+interface ICProps {
+  children: React.ReactNode
+}
+const InfoContainer = ({ children }: ICProps) => (
+  <div
+    style={{
+      position: 'fixed',
+      width: '100%',
+      top: 0,
+      bottom: 0,
+      pointerEvents: 'none',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+    }}
+  >
+    <div className="columns mr-1 mt-6">
+      <div className="column is-one-quarter is-offset-three-quarters">
+        <div style={{ pointerEvents: 'all', overflowX: 'auto', width: '100%' }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  </div>
+)
 
 type VisualizationNode = {
   x: number
@@ -154,6 +180,8 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
     links: [],
   })
 
+  const [search, setSearch] = useState<string>('')
+
   const [highlightedNode, setHighlightedNode] = useState<string | undefined>()
 
   const people = useContext(PeopleContext)
@@ -268,16 +296,41 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
         </title>
       </Helmet>
 
-      {person && knows && known && (
-        <PersonCard
-          person={person}
-          knows={knows}
-          known={known}
-          onSelectPerson={selectNode}
-        />
-      )}
+      <InfoContainer>
+        {person && knows && known ? (
+          <PersonCard
+            person={person}
+            knows={knows}
+            known={known}
+            onSelectPerson={selectNode}
+          />
+        ) : (
+          <Search
+            value={search}
+            onChange={setSearch}
+            options={selectSearchOptions(search, people)}
+            onSelect={selectNode}
+          />
+        )}
+      </InfoContainer>
     </>
   )
 }
 
 export default withRouter(VisualizationContainer)
+
+const selectSearchOptions = (
+  query: string,
+  people: PeopleGraph,
+): { value: string; label: string }[] => {
+  if (query.length < 2) return []
+  return Object.values(people)
+    .filter(
+      ({ name, uri }) =>
+        name.toLowerCase().includes(query.toLowerCase()) ||
+        uri.toLowerCase().includes(query.toLowerCase()),
+    )
+    .sort(({ known: a }, { known: b }) => (b?.size ?? 0) - (a?.size ?? 0))
+    .map(({ name, uri }) => ({ value: uri, label: name || uri }))
+    .slice(0, 10)
+}

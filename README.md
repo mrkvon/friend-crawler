@@ -10,7 +10,8 @@
 - [x] show also who knows this person
 - [ ] login for different pod providers
 - [x] faster (parallel) crawling
-- [ ] search people
+- [x] search people
+  - [ ] make it more accessible and easier to navigate
 - [ ] highlight also people who know the person
 - [ ] highlight people whose button is crawled in PersonList
 - [ ] add custom starting point for crawling
