@@ -12,16 +12,18 @@ const PersonCard = ({ person, knows, known, onSelectPerson }: Props) => {
   return (
     <div className="card">
       <header className="card-header">
-        <p className="card-header-title">
+        <p className="card-header-title" style={{ overflowWrap: 'anywhere' }}>
           <a href={person.uri}>{person.name || person.uri}</a>
         </p>
-        <button
-          className="card-header-icon"
-          aria-label="close"
-          onClick={() => onSelectPerson('')}
-        >
-          close
-        </button>
+        <span className="card-header-icon">
+          <button
+            className="delete"
+            aria-label="close"
+            onClick={() => onSelectPerson('')}
+          >
+            close
+          </button>
+        </span>
       </header>
       {person.photo && (
         <div className="card-image">

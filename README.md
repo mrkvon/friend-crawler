@@ -1,6 +1,10 @@
-# Friend Crawler
+# Solid Friend Crawler
 
-[live version](https://friends.livegraph.org)
+Live at [friends.livegraph.org](https://friends.livegraph.org)
+
+Visualize the network of friends on Solid
+
+The app starts at the logged user (and timbl on solidcommunity.net) and crawls the foaf:knows connections.
 
 ## TODO
 
@@ -8,11 +12,12 @@
 - [x] make people a variable size based on how many people know them
 - [ ] show clearly what are the directions of :knows
 - [x] show also who knows this person
-- [ ] login for different pod providers
+- [x] login for different pod providers
 - [x] faster (parallel) crawling
 - [x] search people
   - [ ] make it more accessible and easier to navigate
-- [ ] highlight also people who know the person
+- [x] highlight also people who know the person
 - [ ] highlight people whose button is crawled in PersonList
 - [ ] add custom starting point for crawling
 - [x] support extended profile (seeAlso, sameAs)
+- [ ] figure hosting it as SPA with router

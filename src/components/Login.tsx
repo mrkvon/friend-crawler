@@ -5,6 +5,7 @@ import {
   handleIncomingRedirect,
 } from '@inrupt/solid-client-authn-browser'
 import { SessionContext, SessionInfo } from '../contexts/session'
+import LoginPrompt from './LoginPrompt'
 
 interface Props {
   className?: string
@@ -32,14 +33,21 @@ const Login: React.FC<Props> = (
         setLoading(false)
       })
   }, [setInfo])
-  const handleLogin = async () => {
+
+  const handleLogin = async (oidcIssuer: string) => {
     setLoading(true)
-    await login({
-      oidcIssuer: 'https://solidcommunity.net',
-      redirectUrl: window.location.href,
-      clientName: 'Friends Crawler',
-    })
-    setLoading(false)
+    try {
+      await login({
+        oidcIssuer,
+        redirectUrl: window.location.href,
+        clientName: 'Friends Crawler',
+      })
+    } catch (error) {
+      alert(`Could not find a Solid Pod at ${oidcIssuer}`)
+      localStorage.removeItem('idp')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -55,15 +63,15 @@ const Login: React.FC<Props> = (
   }
 
   return loading ? (
-    <span {...commonProps}>Loading</span>
+    <button {...commonProps} disabled>
+      Loading
+    </button>
   ) : info?.isLoggedIn ? (
     <button {...commonProps} onClick={handleLogout}>
       {info?.webId} Logout
     </button>
   ) : (
-    <button {...commonProps} onClick={handleLogin}>
-      Login
-    </button>
+    <LoginPrompt {...commonProps} onLogin={handleLogin} />
   )
 }
 

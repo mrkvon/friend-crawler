@@ -40,7 +40,7 @@ const InfoContainer = ({ children }: ICProps) => (
       overflowX: 'hidden',
     }}
   >
-    <div className="columns mr-1 mt-6">
+    <div style={{ marginTop: '4rem' }} className="columns mr-1 ml-1">
       <div className="column is-one-quarter is-offset-three-quarters">
         <div style={{ pointerEvents: 'all', overflowX: 'auto', width: '100%' }}>
           {children}
@@ -155,7 +155,7 @@ const transformLayout = (
 }
 
 function nodeRadius(person: Person) {
-  let count = person.known?.size ?? 0
+  let count = new Set([...(person?.known ?? new Set()), ...person.knows]).size
   count = count < 1 ? 1 : count
   return count ** 0.42 * 5
 }
@@ -165,7 +165,12 @@ const selectNodeDependencies = (
   graph: PeopleGraph,
 ): string[] => {
   if (!selectedNodeUri) return []
-  return Array.from(graph?.[selectedNodeUri]?.knows ?? new Set())
+  return [
+    ...new Set([
+      ...(graph?.[selectedNodeUri]?.knows ?? new Set()),
+      ...(graph?.[selectedNodeUri]?.known ?? new Set()),
+    ]),
+  ]
 }
 
 const VisualizationContainer: React.FC<RouteComponentProps> = ({
@@ -266,15 +271,15 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
 
   const grid = transformGrid(matrix, basicGrid)
 
-  let person, knows, known
+  let person
+  let knows: Person[] = []
+  let known: Person[] = []
 
   if (selectedNode) {
     person = people[selectedNode]
     if (person) {
-      knows = Array.from(person.knows).map(f => people[f])
-      if (person.known) {
-        known = Array.from(person.known).map(f => people[f])
-      }
+      knows = [...person.knows].map(f => people[f])
+      known = [...(person?.known ?? new Set())].map(f => people[f])
     }
   }
 
@@ -297,7 +302,7 @@ const VisualizationContainer: React.FC<RouteComponentProps> = ({
       </Helmet>
 
       <InfoContainer>
-        {person && knows && known ? (
+        {person ? (
           <PersonCard
             person={person}
             knows={knows}

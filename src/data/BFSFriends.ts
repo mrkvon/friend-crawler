@@ -88,7 +88,11 @@ export const findFriends = async (webId: IriString): Promise<PersonData> => {
         data.friends = data.friends
           .concat(friends)
           .filter((a, i, data) => data.indexOf(a) === i)
-        if (!data.name) data.name = getTerm(person, foaf.name)?.value ?? ''
+        if (!data.name)
+          data.name =
+            getTerm(person, foaf.name)?.value ??
+            getTerm(person, vcard.fn)?.value ??
+            ''
         if (!data.photo)
           data.photo =
             getTerm(person, vcard.hasPhoto)?.value ??
