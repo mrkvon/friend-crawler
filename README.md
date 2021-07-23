@@ -20,4 +20,4 @@ The app starts at the logged user (and timbl on solidcommunity.net) and crawls t
 - [ ] highlight people whose button is crawled in PersonList
 - [ ] add custom starting point for crawling
 - [x] support extended profile (seeAlso, sameAs)
-- [ ] figure hosting it as SPA with router
+- [x] figure hosting it as SPA with router
