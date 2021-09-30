@@ -13,7 +13,20 @@ const PersonCard = ({ person, knows, known, onSelectPerson }: Props) => {
     <div className="card">
       <header className="card-header">
         <p className="card-header-title" style={{ overflowWrap: 'anywhere' }}>
-          <a href={person.uri}>{person.name || person.uri}</a>
+          <span>
+            <a href={person.uri}>{person.name || person.uri}</a>{' '}
+            <span
+              className={`tag is-${
+                person.status === 'success'
+                  ? 'success'
+                  : person.status === 'error'
+                  ? 'danger'
+                  : 'light'
+              }`}
+            >
+              {person.status}
+            </span>
+          </span>
         </p>
         <span className="card-header-icon">
           <button
